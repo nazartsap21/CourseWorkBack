@@ -1,0 +1,139 @@
+import {
+  Controller,
+  Get,
+  HttpException,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { UserService } from './user.service';
+import { ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { JwtGuard } from '../auth/guards/jwt.guard';
+import { Request } from 'express';
+import { getTokenFromCookie } from '../common/utils/cookie.utils';
+
+@Controller('user')
+export class UserController {
+  constructor(private readonly userService: UserService) {}
+
+  @Get('profile')
+  @ApiOperation({
+    summary: 'Get user profile',
+    description: 'Get user profile with connected devices',
+  })
+  @UseGuards(JwtGuard)
+  async profile(@Req() req: Request) {
+    const token = getTokenFromCookie(req);
+    if (!token) {
+      throw new HttpException('Invalid token', 401);
+    }
+    return await this.userService.profile(token);
+  }
+
+  @Post('connect-device')
+  @ApiOperation({
+    summary: 'Connect device to user',
+    description: 'Connect device to user',
+  })
+  @ApiQuery({
+    name: 'deviceId',
+    type: 'string',
+    description: 'The ID of the device.',
+  })
+  @UseGuards(JwtGuard)
+  async connectDevice(
+    @Req() req: Request,
+    @Query('deviceId') deviceId: string,
+  ) {
+    const token = getTokenFromCookie(req);
+    if (!token) {
+      throw new HttpException('Invalid token', 401);
+    }
+    return await this.userService.connectDevice(token, deviceId);
+  }
+
+  @Post('disconnect-device')
+  @ApiOperation({
+    summary: 'Disconnect device from user',
+    description: 'Disconnect device from user',
+  })
+  @ApiQuery({
+    name: 'deviceId',
+    type: 'string',
+    description: 'The ID of the device.',
+  })
+  @UseGuards(JwtGuard)
+  async disconnectDevice(
+    @Req() req: Request,
+    @Query('deviceId') deviceId: string,
+  ) {
+    const token = getTokenFromCookie(req);
+    if (!token) {
+      throw new HttpException('Invalid token', 401);
+    }
+    return await this.userService.disconnectDevice(token, deviceId);
+  }
+
+  @Post('update-device')
+  @ApiOperation({
+    summary: 'Update device name and location',
+    description: 'Update device name and location',
+  })
+  @ApiQuery({
+    name: 'deviceId',
+    type: 'string',
+    description: 'The ID of the device.',
+  })
+  @ApiQuery({
+    name: 'name',
+    type: 'string',
+    description: 'The new name of the device.',
+  })
+  @ApiQuery({
+    name: 'location',
+    type: 'string',
+    description: 'The new location of the device.',
+  })
+  @UseGuards(JwtGuard)
+  async updateDevice(
+    @Req() req: Request,
+    @Query('deviceId') deviceId: string,
+    @Query('name') name: string,
+    @Query('location') location: string,
+  ) {
+    const token = getTokenFromCookie(req);
+    if (!token) {
+      throw new HttpException('Invalid token', 401);
+    }
+    return await this.userService.updateDevice(token, deviceId, name, location);
+  }
+
+  @Post('change-password')
+  @ApiOperation({
+    summary: 'Change user password',
+    description: 'Change user password',
+  })
+  async changePassword(
+    @Req() req: Request,
+    @Query('newPassword') newPassword: string,
+  ) {
+    const token = getTokenFromCookie(req);
+    if (!token) {
+      throw new HttpException('Invalid token', 401);
+    }
+    return await this.userService.changePassword(token, newPassword);
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({
+    summary: 'Forgot password',
+    description: 'Forgot password',
+  })
+  async forgotPassword(
+    @Query('email') email: string,
+    @Query('newPassword') newPassword: string,
+  ) {
+    return await this.userService.forgotPassword(email, newPassword);
+  }
+}

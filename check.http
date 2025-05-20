@@ -1,0 +1,2 @@
+POST http://localhost:3000/auth/check
+Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImV4YW1wbGVAZ21haWwuY29tIiwic3ViIjoyLCJpYXQiOjE3NDM5NDk4MjUsImV4cCI6MTc0NDAzNjIyNX0.qtSd6NXICXIfs7i-2kIM98RixIVap1FQAiXTA9qiOok
