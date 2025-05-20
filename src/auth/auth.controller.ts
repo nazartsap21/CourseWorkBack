@@ -42,7 +42,7 @@ export class AuthController {
       secure: false,
       maxAge: 24 * 60 * 60 * 1000,
       path: '/',
-      sameSite: 'strict',
+      sameSite: 'lax',
     });
 
     return res.status(200).json({
@@ -68,5 +68,21 @@ export class AuthController {
     }
 
     return res.send('Logout successful');
+  }
+
+  @Post('check-token')
+  @ApiOperation({
+    summary: 'Check if token is valid',
+    description: 'Check if token is valid',
+  })
+  async checkToken(@Req() req: Request) {
+    const token = getTokenFromCookie(req);
+    if (!token) {
+      throw new HttpException('Invalid token', 401);
+    }
+    const isValid = await this.authService.checkToken(token);
+    return {
+      isAuth: isValid,
+    };
   }
 }

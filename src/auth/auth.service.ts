@@ -51,4 +51,14 @@ export class AuthService {
 
     return this.jwtService.sign(payload);
   }
+
+  public async checkToken(token: string) {
+    const payload: JwtPayloadDto = this.jwtService.decode(token);
+    if (!payload) {
+      throw new HttpException('Invalid token', 401);
+    }
+    return !!(await this.userRepository.findOne({
+      where: { id: payload.sub },
+    }));
+  }
 }
