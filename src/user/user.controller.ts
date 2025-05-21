@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpException,
@@ -8,10 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {ApiBody, ApiOperation, ApiQuery} from '@nestjs/swagger';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { Request } from 'express';
 import { getTokenFromCookie } from '../common/utils/cookie.utils';
+import { UpdateDeviceDto } from 'src/common/dto/updateDevice.dto';
 
 @Controller('user')
 export class UserController {
@@ -80,32 +82,20 @@ export class UserController {
     summary: 'Update device name and location',
     description: 'Update device name and location',
   })
-  @ApiQuery({
-    name: 'deviceId',
-    type: 'string',
-    description: 'The ID of the device.',
-  })
-  @ApiQuery({
-    name: 'name',
-    type: 'string',
-    description: 'The new name of the device.',
-  })
-  @ApiQuery({
-    name: 'location',
-    type: 'string',
-    description: 'The new location of the device.',
+  @ApiBody({
+    type: UpdateDeviceDto,
+    description: 'The details of the device to update.',
   })
   @UseGuards(JwtGuard)
   async updateDevice(
     @Req() req: Request,
-    @Query('deviceId') deviceId: string,
-    @Query('name') name: string,
-    @Query('location') location: string,
+    @Body() updateDeviceDto: UpdateDeviceDto,
   ) {
     const token = getTokenFromCookie(req);
     if (!token) {
       throw new HttpException('Invalid token', 401);
     }
+    const { deviceId, name, location } = updateDeviceDto;
     return await this.userService.updateDevice(token, deviceId, name, location);
   }
 
