@@ -1,7 +1,6 @@
 import { Controller, Get, Param, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { DeviceService } from './device.service';
-import { Device } from '../entities/device.entity';
 
 @ApiTags('Devices')
 @Controller('devices')
@@ -31,19 +30,29 @@ export class DeviceController {
     return this.deviceService.getDeviceById(uniqueDeviceId);
   }
 
-  @Post()
+  @Post('create-device')
   @ApiOperation({
-    summary: 'Create a new device',
-    description: 'Create a new device with a unique ID.',
+    summary: 'Create a new device using a provisioning token',
+    description:
+      'Automatically register a device using a one-time provisioning token.',
   })
   @ApiBody({
-    description: 'The unique ID of the device.',
     schema: {
       type: 'object',
-      properties: { uniqueDeviceId: { type: 'string' } },
+      properties: {
+        provisionToken: {
+          type: 'string',
+          description: 'The one-time provisioning token.',
+        },
+      },
+      required: ['provisionToken'],
     },
   })
-  async createDevice(@Body('uniqueDeviceId') uniqueDeviceId: string) {
-    return this.deviceService.createDevice(uniqueDeviceId);
+  async createDevice(@Body() body: { provisionToken: string }) {
+    const { provisionToken } = body;
+
+    const deviceId =
+      await this.deviceService.createDeviceWithToken(provisionToken);
+    return { deviceId };
   }
 }

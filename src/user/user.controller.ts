@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import {ApiBody, ApiOperation, ApiQuery} from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { Request } from 'express';
 import { getTokenFromCookie } from '../common/utils/cookie.utils';
@@ -38,16 +38,17 @@ export class UserController {
     summary: 'Connect device to user',
     description: 'Connect device to user',
   })
-  @ApiQuery({
-    name: 'deviceId',
-    type: 'string',
-    description: 'The ID of the device.',
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        deviceId: { type: 'string', description: 'The ID of the device to connect.' },
+      },
+      required: ['deviceId'],
+    },
   })
   @UseGuards(JwtGuard)
-  async connectDevice(
-    @Req() req: Request,
-    @Query('deviceId') deviceId: string,
-  ) {
+  async connectDevice(@Req() req: Request, @Body('deviceId') deviceId: string) {
     const token = getTokenFromCookie(req);
     if (!token) {
       throw new HttpException('Invalid token', 401);
@@ -79,8 +80,8 @@ export class UserController {
 
   @Post('update-device')
   @ApiOperation({
-    summary: 'Update device name and location',
-    description: 'Update device name and location',
+    summary: 'Update device name and description',
+    description: 'Update device name and description',
   })
   @ApiBody({
     type: UpdateDeviceDto,
@@ -95,8 +96,36 @@ export class UserController {
     if (!token) {
       throw new HttpException('Invalid token', 401);
     }
-    const { deviceId, name, location } = updateDeviceDto;
-    return await this.userService.updateDevice(token, deviceId, name, location);
+    const { deviceId, name, description } = updateDeviceDto;
+    return await this.userService.updateDevice(
+      token,
+      deviceId,
+      name,
+      description,
+    );
+  }
+
+  @Post('star-device')
+  @ApiOperation({
+    summary: 'Star a device',
+    description: 'Star a device to mark it as favorite',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        deviceId: { type: 'string', description: 'The ID of the device to star.' },
+      },
+      required: ['deviceId'],
+    },
+  })
+  @UseGuards(JwtGuard)
+  async starDevice(@Req() req: Request, @Body('deviceId') deviceId: string) {
+    const token = getTokenFromCookie(req);
+    if (!token) {
+      throw new HttpException('Invalid token', 401);
+    }
+    return await this.userService.starDevice(token, deviceId);
   }
 
   @Post('change-password')

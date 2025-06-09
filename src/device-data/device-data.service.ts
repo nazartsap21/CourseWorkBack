@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DeviceData } from '../entities/deviceData.entity';
 import { Device } from '../entities/device.entity';
-import { airQualityScore } from '../common/utils/airQuality.utils';
 
 @Injectable()
 export class DeviceDataService {
@@ -23,22 +22,44 @@ export class DeviceDataService {
     const device = await this.deviceRepository.findOneOrFail({
       where: { uniqueDeviceId: deviceId },
     });
+
+    const datetimeString = data.datetime as unknown as string;
+    const datetimeParts = datetimeString.split(',');
+    if (datetimeParts.length !== 2) {
+      throw new BadRequestException('Invalid datetime format');
+    }
+
+    const [timePart, datePart] = datetimeParts;
+    const [hours, minutes, seconds] = timePart.split(':').map(Number);
+    const [day, month, year] = datePart.split('/').map(Number);
+
+    const parsedDatetime = new Date(
+      year,
+      month - 1,
+      day,
+      hours,
+      minutes,
+      seconds,
+    );
+    if (isNaN(parsedDatetime.getTime())) {
+      throw new BadRequestException('Invalid datetime value');
+    }
+
     const deviceData = this.deviceDataRepository.create({
       ...data,
       uniqueDeviceId: deviceId,
+      datetime: parsedDatetime,
     });
-    deviceData.datetime = new Date();
-    device.lastDataReceived = new Date();
-    let airQuality: number;
-    if (data.tempAvg && data.humidityAvg && data.ppmAvg) {
-      airQuality = airQualityScore(data.tempAvg, data.humidityAvg, data.ppmAvg);
-    } else {
-      airQuality = 0;
+
+    device.lastDataReceived = parsedDatetime;
+    if (data.airQuality) {
+      deviceData.airQuality = data.airQuality;
+      device.airQuality = data.airQuality;
     }
-    deviceData.airQuality = airQuality;
-    device.airQuality = airQuality;
+
     await this.deviceRepository.save(device);
     await this.deviceDataRepository.save(deviceData);
+
     return { message: 'Data added successfully' };
   }
 }

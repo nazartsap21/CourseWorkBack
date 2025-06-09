@@ -19,5 +19,8 @@ export class UserDevice {
   name: string;
 
   @Column({ nullable: true })
-  location: string;
+  description: string;
+
+  @Column({ default: false })
+  starred: boolean;
 }

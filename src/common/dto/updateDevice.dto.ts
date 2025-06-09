@@ -8,5 +8,5 @@ export class UpdateDeviceDto {
   name: string;
 
   @IsString()
-  location: string;
+  description: string;
 }

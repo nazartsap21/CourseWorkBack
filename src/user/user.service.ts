@@ -37,7 +37,8 @@ export class UserService {
       userDevices: user.userDevices.map((userDevice) => ({
         id: userDevice.id,
         name: userDevice.name,
-        location: userDevice.location,
+        description: userDevice.description,
+        starred: userDevice.starred,
         device: {
           id: userDevice.device.id,
           uniqueDeviceId: userDevice.device.uniqueDeviceId,
@@ -76,16 +77,16 @@ export class UserService {
       },
       relations: ['user', 'device'],
     });
-
     if (existingUserDevice) {
-      throw new HttpException('Device already connected', 400);
+      throw new HttpException('Device already connected', 204);
     }
 
     const newUserDevice = userDeviceRepository.create({
       user,
       device: existingDevice,
       name: 'New Device',
-      location: 'Unknown Location',
+      description: 'No Description',
+      starred: false,
     });
 
     await userDeviceRepository.save(newUserDevice);
@@ -135,7 +136,7 @@ export class UserService {
     token: string,
     deviceId: string,
     name: string,
-    location: string,
+    description: string,
   ) {
     const payload: JwtPayloadDto = this.jwtService.decode(token);
     if (!payload) {
@@ -170,11 +171,47 @@ export class UserService {
     }
 
     existingUserDevice.name = name;
-    existingUserDevice.location = location;
+    existingUserDevice.description = description;
 
     await userDeviceRepository.save(existingUserDevice);
 
     return { message: 'Device updated successfully' };
+  }
+
+  async starDevice(token: string, deviceId: string) {
+    const payload: JwtPayloadDto = this.jwtService.decode(token);
+    if (!payload) {
+      throw new HttpException('Invalid token', 401);
+    }
+
+    const user = await this.userRepository.findOneOrFail({
+      where: { id: payload.sub },
+    });
+    const existingDevice = await this.deviceRepository.findOne({
+      where: { uniqueDeviceId: deviceId },
+    });
+
+    if (!existingDevice) {
+      throw new HttpException('Device not found', 404);
+    }
+
+    const userDeviceRepository =
+      this.userRepository.manager.getRepository(UserDevice);
+    const existingUserDevice = await userDeviceRepository.findOne({
+      where: {
+        user: { id: user.id },
+        device: { id: existingDevice.id },
+      },
+      relations: ['user', 'device'],
+    });
+    if (!existingUserDevice) {
+      throw new HttpException('Device not connected', 400);
+    }
+    existingUserDevice.starred = !existingUserDevice.starred;
+    await userDeviceRepository.save(existingUserDevice);
+    return {
+      message: `Device ${existingUserDevice.starred ? 'starred' : 'unstarred'} successfully`,
+    };
   }
 
   async changePassword(token: string, newPassword: string) {

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsDate } from 'class-validator';
+import { IsNumber, IsDate, IsString } from 'class-validator';
 
 export class DeviceDataDto {
   @ApiProperty({
@@ -46,4 +46,15 @@ export class DeviceDataDto {
   @ApiProperty({ example: 600, description: 'The average ppm recorded.' })
   @IsNumber()
   ppmAvg: number;
+
+  @ApiProperty({ example: 80, description: 'The air quality score.' })
+  @IsNumber()
+  airQuality: number;
+
+  @ApiProperty({
+    example: '18:30:00,01/01/2023',
+    description: 'The date and time when the data was recorded.',
+  })
+  @IsString()
+  datetime: Date;
 }
